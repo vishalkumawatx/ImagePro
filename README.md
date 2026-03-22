@@ -242,10 +242,8 @@ Contributions are welcome! Please follow these steps:
 
 ## 📧 Support & Contact
 
-- **Email**: support@imagepro.com
-- **Website**: [www.imagepro.com](https://www.imagepro.com)
-- **GitHub Issues**: [Report bugs](https://github.com/yourusername/imagepro/issues)
-- **Discord**: [Join community](https://discord.gg/imagepro)
+- **Email**: xarvis320@gmail.com
+- **Website**: [www.imagepro.xo.je](https://imagepro.xo.je/)
 
 ---
 
@@ -270,15 +268,7 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 🎓 Learning Resources
 
-- [Background Removal Explained](docs/FEATURES.md#background-removal)
-- [Image Upscaling Guide](docs/FEATURES.md#image-enhancement)
-- [PDF Generation Best Practices](docs/FEATURES.md#image-to-pdf)
-- [API Integration Tutorial](docs/API.md)
-
----
-
-**Made with ❤️ by the ImagePro Team**
+**Made with ❤️ by Vishal Kumawat**
 
 Last Updated: March 2026 | Version 1.0.0
