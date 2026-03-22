@@ -18,3 +18,26 @@
 
 ---
 
+## 🚀 Quick Start
+
+### Prerequisites
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Internet connection
+- API keys for external services (see Configuration)
+
+### Installation
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/imagepro.git
+   cd imagepro
+   ```
+
+2. **Open in Browser**
+   - Open `index.html` directly in your browser, or
+   - Use a local server:
+     ```bash
+     python -m http.server 8000
+     # Then visit http://localhost:8000
+     ```
+
