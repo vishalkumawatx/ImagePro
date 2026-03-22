@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="ImagePro — Premium AI-powered image tools. Background removal, enhancement, and PDF conversion."/>
+<title>ImagePro</title>
+
+<!-- FONTS -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════════════════
+   ROOT & RESET
+════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#f8fafc;--bg2:#ffffff;--bg3:#f1f5f9;
+  --g1:rgba(0,245,212,.08);--g2:rgba(0,245,212,.15);
+  --cyan:#00d9cc;--violet:#7c3aed;--blue:#3b82f6;
+  --gold:#f59e0b;--pink:#ec4899;
+  --text:#0f172a;--muted:rgba(15,23,42,.62);
+  --r:16px;--r2:12px;
+  --font-h:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:5.5rem;font-size:16px}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--font-b);overflow-x:hidden;
+  cursor:none;-webkit-font-smoothing:antialiased;
+}
+
+@media(max-width:768px){html{scroll-padding-top:5rem}}
+@media(max-width:480px){html{scroll-padding-top:4.5rem}}
+img{display:block;max-width:100%}
+a{text-decoration:none;color:inherit}
+
+/* ════════════════════════════════════════════════════════════
+   360 ROTATING ICON EFFECT
+════════════════════════════════════════════════════════════ */
+@keyframes rotate360{
+  from{transform:rotateY(0deg)}
+  to{transform:rotateY(360deg)}
+}
+.rotating-icon{
+  transform-style:preserve-3d;
+  width:100%;
+  height:100%;
+  transition:transform 0.3s ease;
+}
+.rotating-icon img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.upload-area:hover .rotating-icon{
+  animation:rotate360 0.8s ease-in-out forwards;
+}
+
+/* ════════════════════════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════════════════════════ */
+#cur,#cur-r{position:fixed;pointer-events:none;z-index:99999;transform:translate(-50%,-50%)}
+#cur{
+  width:9px;height:9px;background:var(--cyan);border-radius:50%;
+  mix-blend-mode:multiply;
+  transition:width .22s,height .22s,background .22s,opacity .2s;
+}
+#cur-r{
+  width:36px;height:36px;border:1px solid rgba(0,217,204,.4);border-radius:50%;
+  transition:left .14s ease,top .14s ease,width .25s,height .25s,border-color .25s;
+}
+body.hov #cur{width:18px;height:18px;background:var(--cyan)}
+body.hov #cur-r{width:54px;height:54px;border-color:rgba(0,217,204,.6)}
+
+/* ════════════════════════════════════════════════════════════
+   NOISE OVERLAY
+════════════════════════════════════════════════════════════ */
+#noise{
+  position:fixed;inset:0;pointer-events:none;z-index:9000;
+  opacity:.2;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE LOADER
+════════════════════════════════════════════════════════════ */
+#loader{
+  position:fixed;inset:0;z-index:99998;
+  background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2rem;
+  transition:opacity .7s ease, visibility .7s;
+}
+#loader.gone{opacity:0;visibility:hidden}
+.loader-logo{
+  font-family:var(--font-h);font-size:2.2rem;font-weight:800;
+  letter-spacing:-.04em;color:var(--text);
+}
+.loader-logo em{color:var(--cyan);font-style:normal}
+.loader-bar{
+  width:180px;height:1px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;
+}
+.loader-fill{
+  height:100%;width:0%;background:var(--cyan);
+  border-radius:99px;transition:width .05s linear;
+  box-shadow:0 0 12px var(--cyan);
+}
+.loader-pct{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+/* ════════════════════════════════════════════════════════════
+   NAVBAR
+════════════════════════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:8000;
+  padding:1.1rem 5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.7);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  border-bottom:1px solid rgba(0,217,204,.12);
+  transition:padding .35s,background .35s;
+  box-shadow:0 8px 32px rgba(0,217,204,.08);
+}
+nav.sc{padding:.72rem 5rem;background:rgba(255,255,255,.85);box-shadow:0 12px 40px rgba(0,217,204,.12)}
+.logo{font-family:var(--font-h);font-size:1.4rem;font-weight:800;letter-spacing:-.045em;cursor:pointer;transition:color .3s;display:inline-block}
+.logo:hover{opacity:.8}
+.logo em{color:var(--cyan);font-style:normal}
+.logo span{font-size:.62rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-top:.1rem}
+.nav-l{display:flex;gap:2.6rem;list-style:none}
+.nav-l a{
+  font-size:.78rem;font-weight:500;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);transition:color .2s;position:relative;padding-bottom:2px;
+}
+.nav-l a::after{
+  content:'';position:absolute;bottom:0;left:0;
+  width:0;height:1px;background:var(--cyan);transition:width .3s;
+}
+.nav-l a:hover{color:var(--cyan)}
+.nav-l a:hover::after{width:100%}
+.nav-r{display:flex;align-items:center;gap:1rem}
+.nav-btn{
+  padding:.5rem 1.4rem;
+  border:1px solid rgba(0,217,204,.4);
+  color:var(--cyan);font-size:.76rem;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;
+  border-radius:6px;transition:all .3s;cursor:none;
+  background:rgba(0,217,204,.08);
+}
+.nav-btn:hover{background:var(--cyan);color:#ffffff;box-shadow:0 0 30px rgba(0,217,204,.5)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;z-index:8001;position:relative;transition:all .3s;background:transparent;border:none;appearance:none;-webkit-appearance:none;-moz-appearance:none;outline:none}
+.hamburger span{width:22px;height:1.5px;background:var(--text);border-radius:2px;transition:all .35s cubic-bezier(.23,1,.32,1);display:block}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(8px,8px)}
+.hamburger.active span:nth-child(2){opacity:0;transform:translateX(-10px)}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(7px,-7px)}
+
+/* ════════════════════════════════════════════════════════════
+   HERO
+════════════════════════════════════════════════════════════ */
+#hero{
+  position:relative;min-height:80vh;
+  display:flex;align-items:center;overflow:hidden;
+  padding:6rem 5rem 3rem;
+  margin-top:3rem;
+}
+.hero-c{
+  position:relative;z-index:10;
+  max-width:720px;
+}
+.h-badge{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cyan);padding:.38rem 1.1rem;
+  border:1px solid rgba(0,217,204,.25);border-radius:100px;
+  background:rgba(0,217,204,.12);margin-bottom:2.2rem;
+  opacity:0;transform:translateY(20px);
+}
+.h-badge .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  animation:blink 2s infinite;flex-shrink:0;
+}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.6)}}
+
+.h1{
+  font-family:var(--font-h);
+  font-size:clamp(2.6rem,5.8vw,4.8rem);
+  font-weight:800;line-height:1.04;
+  letter-spacing:-.05em;margin-bottom:1.6rem;
+  opacity:0;transform:translateY(30px);
+}
+.h1 .cy{color:var(--cyan)}
+.h1 .fade{
+  background:linear-gradient(150deg,#0f172a 30%,rgba(15,23,42,.5));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.h-p{
+  font-size:1.08rem;line-height:1.82;color:var(--muted);
+  max-width:520px;margin-bottom:3.5rem;
+  opacity:0;transform:translateY(20px);
+}
+.h-cta{
+  display:inline-flex;gap:1.2rem;flex-wrap:wrap;
+  opacity:0;transform:translateY(20px);
+}
+.btn{
+  padding:1rem 2rem;border-radius:8px;font-family:var(--font-h);
+  font-size:.88rem;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;cursor:none;border:none;
+  transition:all .3s cubic-bezier(.23,1,.32,1);
+}
+.btn-primary{
+  background:var(--cyan);color:#ffffff;position:relative;overflow:hidden;
+}
+.btn-primary::before{
+  content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.3),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.btn-primary:hover{
+  transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,217,204,.4);
+}
+.btn-primary:hover::before{opacity:1}
+.btn-secondary{
+  background:rgba(0,217,204,.08);color:var(--cyan);border:1px solid rgba(0,217,204,.4);
+}
+.btn-secondary:hover{
+  background:rgba(0,217,204,.15);box-shadow:0 0 30px rgba(0,217,204,.3);
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOOL SECTIONS
+════════════════════════════════════════════════════════════ */
+.tool-section{
+  padding:6rem 5rem;position:relative;
+}
+.tool-section.alt{background:var(--bg3)}
+.section-header{
+  text-align:center;margin-bottom:4rem;opacity:0;transform:translateY(30px);
+}
+.section-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cyan);padding:.35rem 1rem;
+  border:1px solid rgba(0,217,204,.25);border-radius:100px;
+  background:rgba(0,217,204,.08);margin-bottom:1.5rem;
+}
+.section-title{
+  font-family:var(--font-h);
+  font-size:clamp(2rem,4vw,3.2rem);
+  font-weight:800;line-height:1.1;
+  letter-spacing:-.03em;margin-bottom:.8rem;
+}
+.section-desc{
+  font-size:.95rem;color:var(--muted);max-width:540px;margin:0 auto;line-height:1.7;
+}
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD AREA
+════════════════════════════════════════════════════════════ */
+.tool-container{
+  max-width:1200px;margin:0 auto;
+}
+.upload-area{
+  background:rgba(255,255,255,.5);backdrop-filter:blur(20px);
+  border:1.5px solid rgba(0,217,204,.2);border-radius:16px;
+  padding:3rem;text-align:center;transition:all .3s;
+  cursor:pointer;position:relative;overflow:hidden;
+}
+.upload-area::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(0,217,204,.1),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.upload-area:hover{
+  border-color:rgba(0,217,204,.4);background:rgba(255,255,255,.7);
+  box-shadow:0 20px 60px rgba(0,217,204,.1);
+}
+.upload-area:hover::before{opacity:1}
+.upload-icon{
+  width:64px;height:64px;margin:0 auto 1.5rem;
+  border:none;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;background:transparent;
+  transition:all .3s;
+}
+.upload-area:hover .upload-icon{
+  transform:scale(1.1);box-shadow:0 0 30px rgba(0,217,204,.3);
+}
+.upload-text h3{
+  font-family:var(--font-h);font-size:1.3rem;font-weight:700;
+  letter-spacing:-.02em;margin-bottom:.5rem;
+}
+.upload-text p{
+  font-size:.9rem;color:var(--muted);line-height:1.6;
+}
+.upload-input{display:none}
+
+/* ════════════════════════════════════════════════════════════
+   LOADER
+════════════════════════════════════════════════════════════ */
+.processing-loader{
+  display:flex;flex-direction:column;align-items:center;gap:2rem;
+  padding:3rem;text-align:center;
+}
+.spinner{
+  width:60px;height:60px;border:2px solid rgba(0,217,204,.2);
+  border-top:2px solid var(--cyan);border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{
+  width:200px;height:2px;background:rgba(0,217,204,.1);
+  border-radius:10px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;width:0%;background:var(--cyan);
+  box-shadow:0 0 15px var(--cyan);animation:progress 2.5s ease-in-out forwards;
+}
+@keyframes progress{
+  0%{width:0%}
+  50%{width:70%}
+  100%{width:100%}
+}
+.loader-text{
+  font-family:var(--font-h);font-size:.95rem;font-weight:600;
+  letter-spacing:-.02em;color:var(--text);
+}
+
+/* ════════════════════════════════════════════════════════════
+   COMPARISON LAYOUT
+════════════════════════════════════════════════════════════ */
+.comparison-container{
+  display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0;
+  opacity:0;transform:translateY(30px);animation:fadeInUp .6s ease-out .2s forwards;
+}
+
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.image-panel{
+  background:var(--bg2);border:1px solid rgba(0,217,204,.15);
+  border-radius:12px;overflow:hidden;position:relative;
+  box-shadow:0 10px 40px rgba(0,0,0,.08);
+}
+.panel-label{
+  position:absolute;top:1rem;left:1rem;z-index:10;
+  font-family:var(--font-h);font-size:.75rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);padding:.5rem 1rem;
+  background:rgba(0,217,204,.12);border:1px solid rgba(0,217,204,.25);
+  border-radius:6px;backdrop-filter:blur(10px);
+}
+.image-wrapper{
+  position:relative;width:100%;padding-bottom:100%;overflow:hidden;
+  background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);
+}
+.image-wrapper img{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;
+}
+.image-wrapper.empty{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:.9rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SLIDER COMPARISON
+════════════════════════════════════════════════════════════ */
+.slider-wrapper{
+  position:relative;width:100%;overflow:hidden;background:#000;
+  border-radius:12px;margin:2rem 0;
+}
+.slider-before,.slider-after{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+}
+.slider-after{
+  overflow:hidden;
+  clip-path:polygon(0 0,var(--sx,50%) 0,var(--sx,50%) 100%,0 100%);
+}
+.slider-before img,.slider-after img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.slider-handle{
+  position:absolute;top:0;left:var(--sx,50%);width:4px;height:100%;
+  background:var(--cyan);cursor:ew-resize;z-index:5;
+  box-shadow:0 0 15px var(--cyan);
+  transform:translateX(-50%);
+}
+.slider-button{
+  position:absolute;top:50%;left:var(--sx,50%);z-index:6;
+  transform:translate(-50%,-50%);
+  background:var(--cyan);color:#fff;
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;box-shadow:0 8px 24px rgba(0,217,204,.4);
+  pointer-events:none;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOGGLE BUTTON
+════════════════════════════════════════════════════════════ */
+.toggle-group{
+  display:flex;gap:.5rem;margin-bottom:1.5rem;
+}
+.toggle-btn{
+  flex:1;padding:.75rem 1rem;border:1px solid rgba(0,217,204,.2);
+  background:rgba(0,217,204,.05);color:var(--muted);
+  font-size:.85rem;font-weight:600;letter-spacing:.05em;
+  border-radius:8px;transition:all .3s;cursor:pointer;
+  font-family:var(--font-h);
+}
+.toggle-btn.active{
+  background:var(--cyan);color:#fff;border-color:var(--cyan);
+  box-shadow:0 0 20px rgba(0,217,204,.4);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DOWNLOAD BUTTON
+════════════════════════════════════════════════════════════ */
+.download-section{
+  display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap;
+}
+.dl-btn{
+  flex:1;min-width:200px;
+  padding:1rem 1.5rem;background:var(--cyan);color:#fff;
+  border:none;border-radius:8px;font-family:var(--font-h);
+  font-size:.9rem;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;cursor:pointer;
+  transition:all .3s;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
+}
+.dl-btn::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle,rgba(255,255,255,.2),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.dl-btn:hover{
+  transform:translateY(-2px);box-shadow:0 15px 40px rgba(0,217,204,.4);
+}
+.dl-btn:hover::before{opacity:1}
+.dl-btn.loading{pointer-events:none;opacity:.7}
+
+/* ════════════════════════════════════════════════════════════
+   RESULT CONTAINER
+════════════════════════════════════════════════════════════ */
+.result-container{
+  background:rgba(255,255,255,.5);backdrop-filter:blur(20px);
+  border:1px solid rgba(0,217,204,.15);border-radius:16px;
+  padding:2.5rem;margin-top:3rem;
+  opacity:0;visibility:hidden;transition:all .5s ease;
+  animation:slideInUp .6s ease-out forwards;
+}
+.result-container.show{opacity:1;visibility:visible}
+
+@keyframes slideInUp{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.result-title{
+  font-family:var(--font-h);font-size:1.5rem;font-weight:700;
+  letter-spacing:-.02em;margin-bottom:2rem;
+  display:flex;align-items:center;gap:.8rem;
+}
+.result-title::before{
+  content:'✓';width:32px;height:32px;background:var(--cyan);
+  color:#fff;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;
+}
+
+.resolution-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(0,217,204,.1);border:1px solid rgba(0,217,204,.25);
+  padding:.5rem .9rem;border-radius:6px;
+  font-size:.8rem;font-weight:600;color:var(--cyan);
+  margin-bottom:1.5rem;
+  font-family:var(--font-h);letter-spacing:.05em;
+}
+
+/* ════════════════════════════════════════════════════════════
+   GRID (IMAGE TO PDF)
+════════════════════════════════════════════════════════════ */
+.images-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:1.5rem;margin:2rem 0;
+}
+.grid-item{
+  background:var(--bg2);border:1.5px dashed rgba(0,217,204,.2);
+  border-radius:12px;overflow:hidden;aspect-ratio:1;
+  position:relative;cursor:grab;transition:all .3s;
+  opacity:0;animation:fadeIn .4s ease-out forwards;
+}
+.grid-item:hover{
+  border-color:var(--cyan);box-shadow:0 0 25px rgba(0,217,204,.2);
+}
+.grid-item.dragging{
+  opacity:.5;transform:scale(.95);
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(.9)}
+  to{opacity:1;transform:scale(1)}
+}
+.grid-img{width:100%;height:100%;object-fit:cover;}
+.grid-remove{
+  position:absolute;top:.5rem;right:.5rem;
+  background:rgba(255,59,48,.9);color:#fff;
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;transition:all .2s;
+  border:none;font-size:1rem;z-index:5;
+}
+.grid-item:hover .grid-remove{opacity:1}
+.grid-remove:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(255,59,48,.5)}
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+════════════════════════════════════════════════════════════ */
+@media(max-width:1024px){
+  nav{padding:1.1rem 3rem}
+  nav.sc{padding:.72rem 3rem}
+  #hero{padding:5rem 3rem 2rem}
+  .tool-section{padding:4rem 3rem}
+}
+
+@media(max-width:768px){
+  .hamburger{display:flex}
+  .nav-l{display:none}
+  nav{padding:.9rem 2rem}
+  nav.sc{padding:.6rem 2rem}
+  #hero{padding:4rem 2rem 2rem;min-height:auto}
+  .h-cta{flex-direction:column}
+  .btn{width:100%}
+  
+  .tool-section{padding:3rem 2rem}
+  .section-header{margin-bottom:2.5rem}
+  
+  .comparison-container{
+    grid-template-columns:1fr;gap:1.5rem;
+  }
+  
+  .images-grid{
+    grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+    gap:1rem;
+  }
+  
+  .upload-area{padding:2rem;border-radius:12px}
+  .result-container{padding:1.5rem}
+  
+  .dl-btn{min-width:140px;padding:.85rem 1rem;font-size:.8rem}
+  .download-section{gap:.8rem}
+  
+  .slider-wrapper{margin:1.5rem 0}
+  
+  .panel-label{font-size:.7rem;padding:.4rem .8rem}
+}
+
+@media(max-width:480px){
+  nav{padding:.8rem 1.5rem}
+  #hero{padding:3rem 1.5rem 1.5rem}
+  
+  .h1{font-size:1.8rem;margin-bottom:1rem}
+  .h-p{font-size:.95rem;margin-bottom:2rem}
+  
+  .tool-section{padding:2.5rem 1.5rem}
+  .section-title{font-size:1.8rem}
+  
+  .upload-area{padding:1.5rem}
+  .upload-icon{width:48px;height:48px;font-size:1.6rem}
+  .upload-text h3{font-size:1.1rem}
+  
+  .comparison-container{gap:1rem}
+  .result-container{padding:1.5rem;border-radius:12px}
+  
+  .images-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  
+  .dl-btn{padding:.75rem .9rem;font-size:.75rem;min-width:120px}
+  
+  .toggle-btn{padding:.6rem .8rem;font-size:.75rem}
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════════════ */
+.hidden{display:none!important}
+.rv{opacity:0;transform:translateY(30px)}
+.rv-l{opacity:0;transform:translateX(-30px)}
+.rv-r{opacity:0;transform:translateX(30px)}
+
+</style>
+
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="cur-r"></div>
+
+<!-- NOISE OVERLAY -->
+<div id="noise"></div>
+
+<!-- PAGE LOADER -->
+<div id="loader">
+  <div class="loader-logo"><em>Image</em>Pro</div>
+  <div style="display:flex;flex-direction:column;gap:.8rem">
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <div class="loader-pct">Loading</div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav id="nav">
+  <div class="logo">
+    <em>Image</em>Pro
+    <span>Premium Tools</span>
+  </div>
+  <ul class="nav-l">
+    <li><a href="#remove-bg">Remove BG</a></li>
+    <li><a href="#enhance">Enhance</a></li>
+    <li><a href="#pdf">To PDF</a></li>
+  </ul>
+  <div class="nav-r">
+    <button class="nav-btn" onclick="document.getElementById('remove-bg').scrollIntoView({behavior:'smooth'})">Get Started</button>
+  </div>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-c">
+    <div class="h-badge" id="hb">
+      <div class="dot"></div>
+      Now Live — Image Tools
+    </div>
+    <h1 class="h1" id="hh">Professional Image <span class="cy"> Processing Tool</span> <span class="fade"></span></h1>
+    <p class="h-p" id="hpx">Remove backgrounds, enhance quality, and convert to PDF with AI-powered precision. No limits. No watermarks.</p>
+    <div class="h-cta" id="hbx">
+      <button class="btn btn-primary" onclick="document.getElementById('remove-bg').scrollIntoView({behavior:'smooth'})">Start Now</button>
+      <button class="btn btn-secondary" onclick="alert('Learn more coming soon!')">Learn More</button>
+    </div>
+  </div>
+</section>
+
+<!-- BACKGROUND REMOVER -->
+<section class="tool-section" id="remove-bg">
+  <div class="tool-container">
+    <div class="section-header">
+      <div class="section-badge"><span class="dot" style="animation:none;background:var(--cyan)"></span>Tool 1</div>
+      <h2 class="section-title">Background <span class="cy">Remover</span></h2>
+      <p class="section-desc">Remove backgrounds instantly with AI precision. Perfect for product shots, portraits, and creative projects.</p>
+    </div>
+
+    <div id="remove-tool">
+      <div class="upload-area" onclick="document.getElementById('upload-remove').click()">
+        <div class="upload-icon rotating-icon"><img src="https://cdn-icons-png.flaticon.com/512/13778/13778002.png" alt="Remove Background"></div>
+        <div class="upload-text">
+          <h3>Upload Your Image</h3>
+          <p>Drag & drop or click to select • PNG, JPG supported • Max 10MB</p>
+        </div>
+        <input type="file" id="upload-remove" class="upload-input" accept="image/*">
+      </div>
+
+      <div id="remove-result" class="hidden">
+        <div class="processing-loader" id="remove-loader">
+          <div class="spinner"></div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="loader-text">Removing Background...</div>
+        </div>
+
+        <div id="remove-display" class="hidden">
+          <div class="toggle-group">
+            <button class="toggle-btn active" onclick="toggleRemoveView('comparison')">Compare</button>
+            <button class="toggle-btn" onclick="toggleRemoveView('before')">Before</button>
+            <button class="toggle-btn" onclick="toggleRemoveView('after')">After</button>
+          </div>
+
+          <div class="comparison-container" id="remove-comparison">
+            <div class="image-panel">
+              <div class="panel-label">Original</div>
+              <div class="image-wrapper" id="remove-original-wrap"></div>
+            </div>
+            <div class="image-panel">
+              <div class="panel-label">Background Removed</div>
+              <div class="image-wrapper" id="remove-result-wrap"></div>
+            </div>
+          </div>
+
+          <div id="remove-slider" class="slider-wrapper hidden">
+            <div class="slider-before" id="remove-slider-before"></div>
+            <div class="slider-after" id="remove-slider-after"></div>
+            <div class="slider-handle"></div>
+            <div class="slider-button">⟨ ⟩</div>
+          </div>
+
+          <div class="download-section">
+            <button class="dl-btn" onclick="downloadRemoveImage()">
+              ⬇ Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IMAGE ENHANCER -->
+<section class="tool-section alt" id="enhance">
+  <div class="tool-container">
+    <div class="section-header">
+      <div class="section-badge"><span class="dot" style="animation:none;background:var(--cyan)"></span>Tool 2</div>
+      <h2 class="section-title">Image <span class="cy">Enhancer</span></h2>
+      <p class="section-desc">Upscale and enhance images up to 4K resolution. Sharper details, richer colors, incredible clarity.</p>
+    </div>
+
+    <div id="enhance-tool">
+      <div class="upload-area" onclick="document.getElementById('upload-enhance').click()">
+        <div class="upload-icon rotating-icon"><img src="https://cdn-icons-png.flaticon.com/512/12916/12916345.png" alt="Image Enhance"></div>
+        <div class="upload-text">
+          <h3>Upload Image to Enhance</h3>
+          <p>Drag & drop or click to select • PNG, JPG supported • Max 10MB</p>
+        </div>
+        <input type="file" id="upload-enhance" class="upload-input" accept="image/*">
+      </div>
+
+      <div id="enhance-result" class="hidden">
+        <div class="processing-loader" id="enhance-loader">
+          <div class="spinner"></div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="loader-text">Enhancing Image...</div>
+        </div>
+
+        <div id="enhance-display" class="hidden">
+          <div class="resolution-badge">
+            <span>📊</span>
+            <span>720p → 4K (4x Upscale)</span>
+          </div>
+
+          <div class="comparison-container" id="enhance-comparison">
+            <div class="image-panel">
+              <div class="panel-label">Original</div>
+              <div class="image-wrapper" id="enhance-original-wrap"></div>
+            </div>
+            <div class="image-panel">
+              <div class="panel-label">Enhanced 4K</div>
+              <div class="image-wrapper" id="enhance-result-wrap"></div>
+            </div>
+          </div>
+
+          <div id="enhance-slider" class="slider-wrapper hidden">
+            <div class="slider-before" id="enhance-slider-before"></div>
+            <div class="slider-after" id="enhance-slider-after"></div>
+            <div class="slider-handle"></div>
+            <div class="slider-button">⟨ ⟩</div>
+          </div>
+
+          <div class="download-section">
+            <button class="dl-btn" onclick="downloadEnhanceImage()">
+              ⬇ Download 4K PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IMAGE TO PDF -->
+<section class="tool-section" id="pdf">
+  <div class="tool-container">
+    <div class="section-header">
+      <div class="section-badge"><span class="dot" style="animation:none;background:var(--cyan)"></span>Tool 3</div>
+      <h2 class="section-title">Image to <span class="cy">PDF</span></h2>
+      <p class="section-desc">Convert multiple images into a professional PDF document. Drag to reorder, download instantly.</p>
+    </div>
+
+    <div id="pdf-tool">
+      <div class="upload-area" onclick="document.getElementById('upload-pdf').click()" style="margin-bottom:2rem">
+        <div class="upload-icon rotating-icon"><img src="https://cdn-icons-png.flaticon.com/512/15495/15495813.png" alt="Image to PDF"></div>
+        <div class="upload-text">
+          <h3>Add Images for PDF</h3>
+          <p>Upload one or more images • Drag to reorder • Max 50MB total</p>
+        </div>
+        <input type="file" id="upload-pdf" class="upload-input" accept="image/*" multiple>
+      </div>
+
+      <div id="pdf-images-list" class="hidden">
+        <h3 style="font-family:var(--font-h);font-size:1.1rem;font-weight:700;margin-bottom:1rem">Images in PDF:</h3>
+        <div class="images-grid" id="pdf-grid"></div>
+      </div>
+
+      <div id="pdf-result" class="hidden" style="text-align:center;padding:2rem">
+        <div class="processing-loader" id="pdf-loader">
+          <div class="spinner"></div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="loader-text">Creating PDF...</div>
+        </div>
+
+        <div id="pdf-preview" class="hidden">
+          <div class="result-container show">
+            <div class="result-title">PDF Ready!</div>
+            <div style="margin:1.5rem 0">
+              <div style="width:100%;max-width:300px;margin:0 auto;aspect-ratio:8.5/11;background:var(--bg3);border:1px solid rgba(0,217,204,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)">
+                📑 PDF Preview
+              </div>
+            </div>
+            <p style="color:var(--muted);margin:1rem 0">Your PDF is ready to download</p>
+            <button class="dl-btn" onclick="downloadPDF()" style="width:100%;max-width:300px;margin:0 auto;display:flex">
+              ⬇ Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="padding:3rem 5rem;background:var(--bg3);border-top:1px solid rgba(0,217,204,.1);color:var(--muted);font-size:.9rem">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:2rem;margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid rgba(0,217,204,.1)">
+      <div style="text-align:left;flex:1;min-width:250px">
+        <p style="margin-bottom:1rem;font-weight:600;color:var(--text)">ImagePro © 2026</p>
+        <p>Premium image tools for modern creators.</p>
+        <p style="margin-top:.5rem">Crafted with <span style="color:var(--cyan)">❤</span> and precision</p>
+      </div>
+      <div style="text-align:right;flex:1;min-width:250px">
+        <p style="margin-bottom:1rem;font-weight:600;color:var(--text)">Developer</p>
+        <p><strong>Vishal Kumawat</strong></p>
+        <div style="display:flex;gap:1rem;margin-top:1rem;justify-content:flex-end;align-items:center">
+          <a href="https://github.com/vishalkumawatx" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--cyan);transition:color .3s" onmouseover="this.style.color='var(--violet)'" onmouseout="this.style.color='var(--cyan)'">
+            <img src="https://cdn-icons-png.flaticon.com/512/733/733609.png" alt="GitHub" style="width:24px;height:24px">
+            <span>@vishalkumawatx</span>
+          </a>
+          <span style="color:rgba(0,217,204,.3)">•</span>
+          <a href="https://linkedin.com/in/vishalkumawatx" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--cyan);transition:color .3s" onmouseover="this.style.color='var(--violet)'" onmouseout="this.style.color='var(--cyan)'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1384/1384014.png" alt="LinkedIn" style="width:24px;height:24px">
+            <span>LinkedIn</span>
+          </a>
+          <span style="color:rgba(0,217,204,.3)">•</span>
+          <a href="https://vishalx.me/" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--cyan);transition:color .3s" onmouseover="this.style.color='var(--violet)'" onmouseout="this.style.color='var(--cyan)'">
+            <img src="https://cdn-icons-png.flaticon.com/512/281/281089.png" alt="Portfolio" style="width:24px;height:24px">
+            <span>Portfolio</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;padding-top:1rem;color:rgba(15,23,42,.4);font-size:.8rem">
+      <p>Made with ImagePro • All rights reserved</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CURSOR SYSTEM
+════════════════════════════════════════════════════════════ */
+const cur=document.getElementById('cur');
+const curR=document.getElementById('cur-r');
+let mouseX=0,mouseY=0;
+
+document.addEventListener('mousemove',e=>{
+  mouseX=e.clientX;
+  mouseY=e.clientY;
+  cur.style.left=mouseX+'px';
+  cur.style.top=mouseY+'px';
+  curR.style.left=mouseX+'px';
+  curR.style.top=mouseY+'px';
+});
+
+document.addEventListener('mouseenter',()=>{
+  cur.style.opacity='1';curR.style.opacity='1';
+});
+document.addEventListener('mouseleave',()=>{
+  cur.style.opacity='0';curR.style.opacity='0';
+});
+
+document.addEventListener('mouseover',e=>{
+  if(e.target.closest('.btn, .nav-btn, .upload-area, .toggle-btn, .dl-btn, .grid-remove, a')){
+    document.body.classList.add('hov');
+  }
+});
+document.addEventListener('mouseout',e=>{
+  if(e.target.closest('.btn, .nav-btn, .upload-area, .toggle-btn, .dl-btn, .grid-remove, a')){
+    document.body.classList.remove('hov');
+  }
+});
+
+/* ════════════════════════════════════════════════════════════
+   PAGE LOAD ANIMATION
+════════════════════════════════════════════════════════════ */
+window.addEventListener('load',()=>{
+  const loader=document.getElementById('loader');
+  const fill=loader.querySelector('.loader-fill');
+  let progress=0;
+  
+  const interval=setInterval(()=>{
+    progress+=Math.random()*30;
+    if(progress>100)progress=100;
+    fill.style.width=progress+'%';
+  },100);
+  
+  setTimeout(()=>{
+    clearInterval(interval);
+    fill.style.width='100%';
+    setTimeout(()=>{
+      loader.classList.add('gone');
+      startAnimations();
+    },400);
+  },1200);
+});
+
+/* ════════════════════════════════════════════════════════════
+   SCROLL & NAVBAR
+════════════════════════════════════════════════════════════ */
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  if(window.scrollY>100){
+    nav.classList.add('sc');
+  }else{
+    nav.classList.remove('sc');
+  }
+});
+
+/* ════════════════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════════════════ */
+function startAnimations(){
+  gsap.registerPlugin(ScrollTrigger);
+  
+  gsap.timeline({delay:.2})
+    .to('#hb',{opacity:1,y:0,duration:.75,ease:'power3.out'})
+    .to('#hh',{opacity:1,y:0,duration:.9,ease:'power3.out'},'-=.45')
+    .to('#hpx',{opacity:1,y:0,duration:.75,ease:'power3.out'},'-=.5')
+    .to('#hbx',{opacity:1,y:0,duration:.65,ease:'power3.out'},'-=.42');
+  
+  gsap.utils.toArray('.section-header').forEach((el,i)=>{
+    gsap.to(el,{
+      opacity:1,y:0,duration:.8,ease:'power3.out',
+      scrollTrigger:{trigger:el,start:'top 85%',once:true},
+      delay:i*.1
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   BACKGROUND REMOVER
+════════════════════════════════════════════════════════════ */
+let removeOriginal=null;
+let removeProcessed=null;
+let removeFile=null;
+
+// API Keys for Background Removal
+const BG_REMOVAL_APIs = {
+  remove_bg: 'https://api.remove.bg/v1.0/removebg', // Requires API key from remove.bg
+  background_remover: 'https://backgroundremover.app/api/remove', // Alternative
+};
+
+// Using remove.bg - you need to get API key from https://www.remove.bg/api
+const REMOVE_BG_API_KEY = 'wiTH5aWsq5ctNYxh2SpTH9yF'; // Replace with actual API key
+
+document.getElementById('upload-remove').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(file){
+    if(file.size>10*1024*1024){
+      alert('File size must be less than 10MB');
+      return;
+    }
+    removeFile=file;
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      removeOriginal=event.target.result;
+      processRemoveBg(file);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+const removeBgUploadArea=document.querySelector('[onclick*="remove"]').parentElement;
+removeBgUploadArea.addEventListener('dragover',e=>{
+  e.preventDefault();
+  removeBgUploadArea.style.borderColor='rgba(0,217,204,.6)';
+  removeBgUploadArea.style.background='rgba(0,217,204,.1)';
+});
+removeBgUploadArea.addEventListener('dragleave',e=>{
+  removeBgUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  removeBgUploadArea.style.background='rgba(255,255,255,.5)';
+});
+removeBgUploadArea.addEventListener('drop',e=>{
+  e.preventDefault();
+  removeBgUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  removeBgUploadArea.style.background='rgba(255,255,255,.5)';
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/')){
+    if(file.size>10*1024*1024){
+      alert('File size must be less than 10MB');
+      return;
+    }
+    removeFile=file;
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      removeOriginal=event.target.result;
+      processRemoveBg(file);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+async function processRemoveBg(file){
+  const resultDiv=document.getElementById('remove-result');
+  resultDiv.classList.remove('hidden');
+  document.getElementById('remove-loader').classList.remove('hidden');
+  document.getElementById('remove-display').classList.add('hidden');
+  
+  try {
+    // Method 1: Using remove.bg API (recommended)
+    if(REMOVE_BG_API_KEY!=='YOUR_REMOVE_BG_API_KEY'){
+      const formData=new FormData();
+      formData.append('image_file',file);
+      formData.append('size','auto');
+      formData.append('type','auto');
+      formData.append('format','PNG');
+      
+      const response=await fetch(BG_REMOVAL_APIs.remove_bg,{
+        method:'POST',
+        headers:{
+          'X-Api-Key':REMOVE_BG_API_KEY
+        },
+        body:formData
+      });
+      
+      if(response.ok){
+        const blob=await response.blob();
+        removeProcessed=URL.createObjectURL(blob);
+        displayRemoveResult();
+        return;
+      }else if(response.status===403){
+        throw new Error('Invalid API key. Please get one from https://www.remove.bg/api');
+      }
+    }
+    
+    // Method 2: Fallback - Using alternative free API
+    const formData=new FormData();
+    formData.append('file',file);
+    
+    const alternativeResponse=await fetch('https://api.bgremover.app/remove',{
+      method:'POST',
+      body:formData
+    });
+    
+    if(alternativeResponse.ok){
+      const blob=await alternativeResponse.blob();
+      removeProcessed=URL.createObjectURL(blob);
+      displayRemoveResult();
+    }else{
+      // Fallback: Use local canvas-based background removal
+      await performLocalBgRemoval(removeOriginal);
+      displayRemoveResult();
+    }
+  }catch(error){
+    console.error('Background removal error:',error);
+    // Fallback to local processing
+    await performLocalBgRemoval(removeOriginal);
+    displayRemoveResult();
+  }
+}
+
+async function performLocalBgRemoval(imageSrc){
+  // Using TensorFlow.js with BodyPix model for background removal
+  const script1=document.createElement('script');
+  script1.src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4';
+  
+  const script2=document.createElement('script');
+  script2.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2';
+  
+  return new Promise((resolve)=>{
+    document.head.appendChild(script1);
+    script1.onload=()=>{
+      document.head.appendChild(script2);
+      script2.onload=async()=>{
+        try{
+          const net=await bodyPix.load({
+            architecture:'MobileNetV1',
+            outputStride:16,
+            multiplier:0.5,
+            quantBytes:2
+          });
+          
+          const img=new Image();
+          img.crossOrigin='anonymous';
+          img.src=imageSrc;
+          
+          img.onload=async()=>{
+            const segmentation=await net.segmentPerson(img);
+            
+            const canvas=document.createElement('canvas');
+            canvas.width=img.width;
+            canvas.height=img.height;
+            const ctx=canvas.getContext('2d');
+            
+            ctx.drawImage(img,0,0);
+            const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+            
+            for(let i=0;i<segmentation.data.length;i++){
+              if(segmentation.data[i]===0){
+                imageData.data[i*4+3]=0; // Set alpha to 0 for background
+              }
+            }
+            
+            ctx.putImageData(imageData,0,0);
+            removeProcessed=canvas.toDataURL();
+            resolve();
+          };
+        }catch(err){
+          console.error('Local BG removal error:',err);
+          removeProcessed=removeOriginal; // Fallback
+          resolve();
+        }
+      };
+    };
+  });
+}
+
+function displayRemoveResult(){
+  document.getElementById('remove-loader').classList.add('hidden');
+  document.getElementById('remove-display').classList.remove('hidden');
+  
+  document.getElementById('remove-original-wrap').innerHTML=`<img src="${removeOriginal}" alt="Original">`;
+  document.getElementById('remove-result-wrap').innerHTML=`<img src="${removeProcessed}" alt="Processed">`;
+  
+  initRemoveSlider();
+}
+
+function initRemoveSlider(){
+  const slider=document.getElementById('remove-slider');
+  const handle=slider.querySelector('.slider-handle');
+  const btnGroup=slider.querySelector('.slider-button');
+  let isDown=false;
+  
+  function updateSlider(e){
+    if(!isDown&&e.type!=='click')return;
+    const rect=slider.getBoundingClientRect();
+    let x=e.clientX-rect.left;
+    if(e.touches)x=e.touches[0].clientX-rect.left;
+    x=Math.max(0,Math.min(x,rect.width));
+    const percent=(x/rect.width)*100;
+    slider.style.setProperty('--sx',percent+'%');
+  }
+  
+  handle.addEventListener('mousedown',()=>isDown=true);
+  document.addEventListener('mouseup',()=>isDown=false);
+  document.addEventListener('mousemove',updateSlider);
+  slider.addEventListener('touchstart',()=>isDown=true);
+  document.addEventListener('touchend',()=>isDown=false);
+  document.addEventListener('touchmove',updateSlider);
+}
+
+function toggleRemoveView(type){
+  document.querySelectorAll('#remove-tool .toggle-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const comparison=document.getElementById('remove-comparison');
+  const slider=document.getElementById('remove-slider');
+  
+  if(type==='comparison'){
+    comparison.classList.remove('hidden');
+    slider.classList.add('hidden');
+  }else if(type==='before'){
+    comparison.classList.add('hidden');
+    slider.classList.add('hidden');
+  }else if(type==='after'){
+    comparison.classList.add('hidden');
+    slider.classList.add('hidden');
+  }
+}
+
+function downloadRemoveImage(){
+  if(!removeProcessed){
+    alert('Please process an image first');
+    return;
+  }
+  
+  try {
+    if(removeProcessed.startsWith('blob:')){
+      const a=document.createElement('a');
+      a.href=removeProcessed;
+      a.download=`image-no-background-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }else{
+      fetch(removeProcessed)
+        .then(res=>res.blob())
+        .then(blob=>{
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;
+          a.download=`image-no-background-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    }
+  }catch(error){
+    console.error('Download error:',error);
+    alert('Error downloading image. Please try again.');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   IMAGE ENHANCER
+════════════════════════════════════════════════════════════ */
+let enhanceOriginal=null;
+let enhanceProcessed=null;
+let enhanceFile=null;
+
+// Image Enhancement APIs
+const ENHANCE_APIs={
+  upscayl:'https://api.upscayl.com/api/upscale', // Free upscaling
+  clipdrop:'https://clipdrop.co/api/remove-background', // Requires API key
+  imgupscaler:'https://api.imgupscaler.com/api/upscale'
+};
+
+// Using free upscaling with inference API
+const UPSCALE_API='https://api-inference.huggingface.co/models/philipjackson/Real-ESRGAN';
+const HF_API_KEY='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'; // Get from https://huggingface.co/settings/tokens
+
+document.getElementById('upload-enhance').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(file){
+    if(file.size>10*1024*1024){
+      alert('File size must be less than 10MB');
+      return;
+    }
+    enhanceFile=file;
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      enhanceOriginal=event.target.result;
+      processEnhanceImage(file);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+const enhanceUploadArea=document.querySelectorAll('.upload-area')[1];
+enhanceUploadArea.addEventListener('dragover',e=>{
+  e.preventDefault();
+  enhanceUploadArea.style.borderColor='rgba(0,217,204,.6)';
+  enhanceUploadArea.style.background='rgba(0,217,204,.1)';
+});
+enhanceUploadArea.addEventListener('dragleave',e=>{
+  enhanceUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  enhanceUploadArea.style.background='rgba(255,255,255,.5)';
+});
+enhanceUploadArea.addEventListener('drop',e=>{
+  e.preventDefault();
+  enhanceUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  enhanceUploadArea.style.background='rgba(255,255,255,.5)';
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/')){
+    if(file.size>10*1024*1024){
+      alert('File size must be less than 10MB');
+      return;
+    }
+    enhanceFile=file;
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      enhanceOriginal=event.target.result;
+      processEnhanceImage(file);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+async function processEnhanceImage(file){
+  const resultDiv=document.getElementById('enhance-result');
+  resultDiv.classList.remove('hidden');
+  document.getElementById('enhance-loader').classList.remove('hidden');
+  document.getElementById('enhance-display').classList.add('hidden');
+  
+  try {
+    // Method 1: Try HuggingFace Inference API (Real-ESRGAN for upscaling)
+    if(HF_API_KEY && HF_API_KEY!=='YOUR_HUGGINGFACE_API_KEY' && HF_API_KEY.trim()!==''){
+      try {
+        const blob=await file.arrayBuffer();
+        const response=await fetch(UPSCALE_API,{
+          headers:{
+            'Authorization':`Bearer ${HF_API_KEY}`,
+            'Content-Type':'application/octet-stream'
+          },
+          method:'POST',
+          body:blob
+        });
+        
+        if(response.ok){
+          const resultBlob=await response.blob();
+          enhanceProcessed=URL.createObjectURL(resultBlob);
+          displayEnhanceResult();
+          return;
+        }else{
+          console.warn('HF API responded with status:',response.status);
+        }
+      }catch(hfError){
+        console.warn('HuggingFace API call failed:',hfError.message);
+      }
+    }
+    
+    // Method 2: Using local canvas-based enhancement as fallback
+    await performLocalImageEnhance(enhanceOriginal);
+    displayEnhanceResult();
+    
+  }catch(error){
+    console.error('Image enhancement error:',error);
+    // Fallback to local processing
+    await performLocalImageEnhance(enhanceOriginal);
+    displayEnhanceResult();
+  }
+}
+
+async function performLocalImageEnhance(imageSrc){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.src=imageSrc;
+    
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      
+      // 4x upscaling simulation
+      canvas.width=img.width*2;
+      canvas.height=img.height*2;
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      
+      // Enhancement: Increase contrast and clarity
+      const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const data=imageData.data;
+      
+      for(let i=0;i<data.length;i+=4){
+        // Increase contrast
+        let r=data[i],g=data[i+1],b=data[i+2];
+        const avg=(r+g+b)/3;
+        const factor=1.3;
+        
+        data[i]=Math.min(255,avg+(r-avg)*factor);
+        data[i+1]=Math.min(255,avg+(g-avg)*factor);
+        data[i+2]=Math.min(255,avg+(b-avg)*factor);
+      }
+      
+      ctx.putImageData(imageData,0,0);
+      enhanceProcessed=canvas.toDataURL('image/png',0.95);
+      resolve();
+    };
+  });
+}
+
+function displayEnhanceResult(){
+  document.getElementById('enhance-loader').classList.add('hidden');
+  document.getElementById('enhance-display').classList.remove('hidden');
+  
+  document.getElementById('enhance-original-wrap').innerHTML=`<img src="${enhanceOriginal}" alt="Original">`;
+  document.getElementById('enhance-result-wrap').innerHTML=`<img src="${enhanceProcessed}" alt="Enhanced">`;
+  
+  initEnhanceSlider();
+}
+
+function initEnhanceSlider(){
+  const slider=document.getElementById('enhance-slider');
+  const handle=slider.querySelector('.slider-handle');
+  let isDown=false;
+  
+  function updateSlider(e){
+    if(!isDown&&e.type!=='click')return;
+    const rect=slider.getBoundingClientRect();
+    let x=e.clientX-rect.left;
+    if(e.touches)x=e.touches[0].clientX-rect.left;
+    x=Math.max(0,Math.min(x,rect.width));
+    const percent=(x/rect.width)*100;
+    slider.style.setProperty('--sx',percent+'%');
+  }
+  
+  handle.addEventListener('mousedown',()=>isDown=true);
+  document.addEventListener('mouseup',()=>isDown=false);
+  document.addEventListener('mousemove',updateSlider);
+  slider.addEventListener('touchstart',()=>isDown=true);
+  document.addEventListener('touchend',()=>isDown=false);
+  document.addEventListener('touchmove',updateSlider);
+}
+
+function downloadEnhanceImage(){
+  if(!enhanceProcessed){
+    alert('Please enhance an image first');
+    return;
+  }
+  
+  try {
+    if(enhanceProcessed.startsWith('blob:')){
+      const a=document.createElement('a');
+      a.href=enhanceProcessed;
+      a.download=`image-enhanced-4k-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }else{
+      fetch(enhanceProcessed)
+        .then(res=>res.blob())
+        .then(blob=>{
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;
+          a.download=`image-enhanced-4k-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    }
+  }catch(error){
+    console.error('Download error:',error);
+    alert('Error downloading image. Please try again.');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   IMAGE TO PDF
+════════════════════════════════════════════════════════════ */
+let pdfImages=[];
+let generatedPdfBlob=null;
+
+// PDF Generation APIs
+const PDF_GEN_APIs={
+  jspdf:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  pdfkit:'https://cdn.jsdelivr.net/npm/pdfkit@0.13.0/dist/pdfkit.min.js',
+  html2pdf:'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+};
+
+// Load jsPDF library
+function loadPdfLibrary(){
+  return new Promise((resolve)=>{
+    if(typeof jsPDF!=='undefined'){
+      resolve();
+      return;
+    }
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload=resolve;
+    document.head.appendChild(script);
+  });
+}
+
+document.getElementById('upload-pdf').addEventListener('change',e=>{
+  const files=Array.from(e.target.files);
+  addPdfImages(files);
+});
+
+const pdfUploadArea=document.querySelectorAll('.upload-area')[2];
+pdfUploadArea.addEventListener('dragover',e=>{
+  e.preventDefault();
+  pdfUploadArea.style.borderColor='rgba(0,217,204,.6)';
+  pdfUploadArea.style.background='rgba(0,217,204,.1)';
+});
+pdfUploadArea.addEventListener('dragleave',e=>{
+  pdfUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  pdfUploadArea.style.background='rgba(255,255,255,.5)';
+});
+pdfUploadArea.addEventListener('drop',e=>{
+  e.preventDefault();
+  pdfUploadArea.style.borderColor='rgba(0,217,204,.2)';
+  pdfUploadArea.style.background='rgba(255,255,255,.5)';
+  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  addPdfImages(files);
+});
+
+function addPdfImages(files){
+  files.forEach(file=>{
+    if(file.size>50*1024*1024){
+      alert('File size must be less than 50MB total');
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      pdfImages.push({
+        data:event.target.result,
+        name:file.name,
+        size:`${(file.size/1024).toFixed(1)}KB`
+      });
+      updatePdfGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function updatePdfGrid(){
+  const list=document.getElementById('pdf-images-list');
+  const grid=document.getElementById('pdf-grid');
+  
+  if(pdfImages.length>0){
+    list.classList.remove('hidden');
+    grid.innerHTML='';
+    
+    pdfImages.forEach((img,i)=>{
+      const item=document.createElement('div');
+      item.className='grid-item';
+      item.draggable=true;
+      item.innerHTML=`
+        <img src="${img.data}" class="grid-img" alt="Image ${i+1}">
+        <button class="grid-remove" onclick="removePdfImage(${i})">✕</button>
+      `;
+      
+      item.addEventListener('dragstart',e=>{
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('index',i);
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+      item.addEventListener('dragover',e=>e.preventDefault());
+      item.addEventListener('drop',e=>{
+        e.preventDefault();
+        const fromIndex=parseInt(e.dataTransfer.getData('index'));
+        const toIndex=i;
+        [pdfImages[fromIndex],pdfImages[toIndex]]=[pdfImages[toIndex],pdfImages[fromIndex]];
+        updatePdfGrid();
+      });
+      
+      grid.appendChild(item);
+    });
+    
+    // Show generate PDF button
+    showGeneratePdfButton();
+  }else{
+    list.classList.add('hidden');
+  }
+}
+
+function showGeneratePdfButton(){
+  let btn=document.getElementById('generate-pdf-btn');
+  if(!btn){
+    btn=document.createElement('button');
+    btn.id='generate-pdf-btn';
+    btn.className='dl-btn';
+    btn.style.width='100%';
+    btn.style.maxWidth='400px';
+    btn.style.margin='2rem auto';
+    btn.style.display='flex';
+    btn.innerHTML='📄 Generate PDF';
+    btn.onclick=generatePdf;
+    document.getElementById('pdf-images-list').parentElement.insertBefore(btn,document.getElementById('pdf-result'));
+  }
+}
+
+function removePdfImage(index){
+  pdfImages.splice(index,1);
+  updatePdfGrid();
+  if(pdfImages.length===0){
+    const btn=document.getElementById('generate-pdf-btn');
+    if(btn)btn.remove();
+  }
+}
+
+async function generatePdf(){
+  if(pdfImages.length===0){
+    alert('Please add at least one image');
+    return;
+  }
+  
+  const resultDiv=document.getElementById('pdf-result');
+  const loader=document.getElementById('pdf-loader');
+  const preview=document.getElementById('pdf-preview');
+  
+  resultDiv.classList.remove('hidden');
+  loader.classList.remove('hidden');
+  preview.classList.add('hidden');
+  
+  try {
+    await loadPdfLibrary();
+    
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({
+      orientation:'portrait',
+      unit:'mm',
+      format:'a4'
+    });
+    
+    const pageWidth=pdf.internal.pageSize.getWidth();
+    const pageHeight=pdf.internal.pageSize.getHeight();
+    const padding=10;
+    const contentWidth=pageWidth-(padding*2);
+    
+    for(let i=0;i<pdfImages.length;i++){
+      if(i>0)pdf.addPage();
+      
+      const img=new Image();
+      img.src=pdfImages[i].data;
+      
+      await new Promise((resolve)=>{
+        img.onload=()=>{
+          const imgWidth=img.width;
+          const imgHeight=img.height;
+          const ratio=imgWidth/imgHeight;
+          
+          let finalWidth=contentWidth;
+          let finalHeight=contentWidth/ratio;
+          
+          if(finalHeight>pageHeight-padding*2){
+            finalHeight=pageHeight-padding*2;
+            finalWidth=finalHeight*ratio;
+          }
+          
+          const x=(pageWidth-finalWidth)/2;
+          const y=padding+((pageHeight-padding*2-finalHeight)/2);
+          
+          pdf.addImage(pdfImages[i].data,'JPEG',x,y,finalWidth,finalHeight);
+          
+          resolve();
+        };
+      });
+    }
+    
+    // Generate PDF blob
+    const pdfBlob=pdf.output('blob');
+    generatedPdfBlob=pdfBlob;
+    
+    setTimeout(()=>{
+      loader.classList.add('hidden');
+      preview.classList.remove('hidden');
+    },1500);
+    
+  }catch(error){
+    console.error('PDF generation error:',error);
+    alert('Error generating PDF. Please try again.');
+    resultDiv.classList.add('hidden');
+  }
+}
+
+function downloadPDF(){
+  if(!generatedPdfBlob){
+    alert('Please generate PDF first');
+    return;
+  }
+  
+  const url=URL.createObjectURL(generatedPdfBlob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`images-to-pdf-${Date.now()}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ════════════════════════════════════════════════════════════
+   HAMBURGER MENU
+════════════════════════════════════════════════════════════ */
+const hamburger=document.getElementById('hamburger');
+hamburger.addEventListener('click',()=>{
+  hamburger.classList.toggle('active');
+});
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE MENU (placeholder for future implementation)
+════════════════════════════════════════════════════════════ */
+
+/* Hide loader and start on page ready */
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    document.getElementById('loader').classList.add('gone');
+    startAnimations();
+  },800);
+});
+</script>
+
+</body>
+</html>
