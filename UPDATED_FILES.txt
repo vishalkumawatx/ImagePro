@@ -1,0 +1,6 @@
+github-comment-updater manifest v1
+Listed paths: original contents were not changed.
+Paths are JSON-quoted; reasons describe conservative exclusions.
+"README.md"	unsupported format
+"favicon.png"	unsupported format
+"index.html"	unsupported format
